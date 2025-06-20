@@ -92,9 +92,9 @@ This project is licensed under the MIT License — see the LICENSE file for deta
 👨‍💻 Author
 Your Name
 
-📧 your.email@domain.com
+📧 patilrakshit388@gmail.com
 
-🌐 Portfolio or LinkedIn
+🌐 https://www.linkedin.com/in/rakshit-patil-889852233/
 
 ⭐ Feedback & Contributions
 Love it? Give it a ⭐ star!
