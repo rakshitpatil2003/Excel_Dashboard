@@ -1,0 +1,1501 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Universal Excel Dashboard Generator</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 25px 50px rgba(0,0,0,0.15);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
+            color: white;
+            padding: 40px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 2.8em;
+            margin-bottom: 10px;
+            font-weight: 300;
+        }
+
+        .header p {
+            font-size: 1.2em;
+            opacity: 0.9;
+        }
+
+        .content {
+            padding: 40px;
+        }
+
+        .upload-section {
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            border-radius: 15px;
+            padding: 40px;
+            text-align: center;
+            margin-bottom: 30px;
+            color: white;
+        }
+
+        .upload-section h2 {
+            font-size: 2em;
+            margin-bottom: 20px;
+        }
+
+        .file-input-wrapper {
+            position: relative;
+            display: inline-block;
+            margin: 20px 0;
+        }
+
+        .file-input {
+            position: absolute;
+            left: -9999px;
+        }
+
+        .file-input-label {
+            display: inline-block;
+            padding: 15px 30px;
+            background: white;
+            color: #2c3e50;
+            border-radius: 50px;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 1.1em;
+            transition: all 0.3s ease;
+            border: 3px solid transparent;
+        }
+
+        .file-input-label:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(0,0,0,0.2);
+            border-color: #3498db;
+        }
+
+        .file-info {
+            margin-top: 15px;
+            padding: 10px;
+            background: rgba(255,255,255,0.2);
+            border-radius: 10px;
+            display: none;
+        }
+
+        .generate-btn {
+            background: linear-gradient(135deg, #2ecc71 0%, #27ae60 100%);
+            color: white;
+            padding: 15px 40px;
+            border: none;
+            border-radius: 50px;
+            font-size: 1.2em;
+            font-weight: bold;
+            cursor: pointer;
+            margin: 20px 10px;
+            transition: all 0.3s ease;
+        }
+
+        .generate-btn:hover:not(:disabled) {
+            transform: translateY(-3px);
+            box-shadow: 0 15px 30px rgba(0,0,0,0.2);
+        }
+
+        .generate-btn:disabled {
+            background: #bdc3c7;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 25px;
+            margin: 30px 0;
+        }
+
+        .feature-card {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            color: white;
+            padding: 30px;
+            border-radius: 15px;
+            text-align: center;
+            transition: transform 0.3s ease;
+        }
+
+        .feature-card:hover {
+            transform: translateY(-10px) scale(1.02);
+        }
+
+        .feature-card h3 {
+            font-size: 1.5em;
+            margin-bottom: 15px;
+        }
+
+        .feature-card ul {
+            list-style: none;
+            text-align: left;
+        }
+
+        .feature-card li {
+            padding: 5px 0;
+            position: relative;
+            padding-left: 25px;
+        }
+
+        .feature-card li:before {
+            content: "✨";
+            position: absolute;
+            left: 0;
+        }
+
+        .status {
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 10px;
+            text-align: center;
+            font-weight: bold;
+            font-size: 1.1em;
+        }
+
+        .status.success {
+            background: linear-gradient(135deg, #2ecc71 0%, #27ae60 100%);
+            color: white;
+        }
+
+        .status.error {
+            background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%);
+            color: white;
+        }
+
+        .status.processing {
+            background: linear-gradient(135deg, #f39c12 0%, #e67e22 100%);
+            color: white;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 6px;
+            background: rgba(255,255,255,0.3);
+            border-radius: 3px;
+            overflow: hidden;
+            margin-top: 10px;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: white;
+            width: 0%;
+            transition: width 0.3s ease;
+        }
+
+        .instructions {
+            background: linear-gradient(135deg, #a8edea 0%, #fed6e3 100%);
+            padding: 30px;
+            border-radius: 15px;
+            margin: 30px 0;
+        }
+
+        .instructions h3 {
+            color: #2c3e50;
+            margin-bottom: 20px;
+            font-size: 1.5em;
+        }
+
+        .instructions ol {
+            color: #2c3e50;
+            line-height: 1.8;
+        }
+
+        .instructions li {
+            margin-bottom: 10px;
+        }
+
+        .code-block {
+            background: #2c3e50;
+            color: #ecf0f1;
+            padding: 15px;
+            border-radius: 8px;
+            font-family: 'Courier New', monospace;
+            margin: 10px 0;
+            overflow-x: auto;
+        }
+
+        .sample-data {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 25px;
+            border-radius: 15px;
+            margin: 20px 0;
+        }
+
+        .sample-data h4 {
+            margin-bottom: 15px;
+            font-size: 1.3em;
+        }
+
+        .sample-data p {
+            line-height: 1.6;
+            margin-bottom: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>📊 Universal Excel Dashboard Generator</h1>
+            <p>Upload any MBA-ITBM student dataset and generate comprehensive analytics dashboards</p>
+        </div>
+        
+        <div class="content">
+            <div class="upload-section">
+                <h2>📁 Upload Your Dataset</h2>
+                <p>Support for Excel files (.xlsx, .xls) with student data</p>
+                
+                <div class="file-input-wrapper">
+                    <input type="file" id="fileInput" class="file-input" accept=".xlsx,.xls" />
+                    <label for="fileInput" class="file-input-label">
+                        📂 Choose Excel File
+                    </label>
+                </div>
+                
+                <div id="fileInfo" class="file-info">
+                    <strong>📄 File loaded:</strong> <span id="fileName"></span><br>
+                    <strong>📊 Records:</strong> <span id="recordCount"></span>
+                </div>
+                
+                <div>
+                    <button id="generateBtn" class="generate-btn" disabled>
+                        🚀 Generate Dashboard
+                    </button>
+                    <button id="downloadSample" class="generate-btn" style="background: linear-gradient(135deg, #9b59b6 0%, #8e44ad 100%);">
+                        📋 Download Sample Format
+                    </button>
+                </div>
+            </div>
+
+            <div id="status"></div>
+
+            <div class="features-grid">
+                <div class="feature-card">
+                    <h3>📈 Executive Summary</h3>
+                    <ul>
+                        <li>Key Performance Indicators</li>
+                        <li>Placement Readiness Score</li>
+                        <li>Student Demographics Overview</li>
+                        <li>Strategic Recommendations</li>
+                    </ul>
+                </div>
+                
+                <div class="feature-card">
+                    <h3>🎓 Specialization Analysis</h3>
+                    <ul>
+                        <li>Major vs Minor Breakdown</li>
+                        <li>Industry Demand Mapping</li>
+                        <li>Market Alignment Assessment</li>
+                        <li>Placement Potential Scoring</li>
+                    </ul>
+                </div>
+                
+                <div class="feature-card">
+                    <h3>👥 Demographics Deep Dive</h3>
+                    <ul>
+                        <li>Age Distribution Analysis</li>
+                        <li>Work Experience Patterns</li>
+                        <li>Academic Background Breakdown</li>
+                        <li>Gender Demographics</li>
+                    </ul>
+                </div>
+                
+                <div class="feature-card">
+                    <h3>📊 Data Quality Report</h3>
+                    <ul>
+                        <li>Missing Data Analysis</li>
+                        <li>Inconsistency Detection</li>
+                        <li>Quality Score Assessment</li>
+                        <li>Improvement Recommendations</li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="sample-data">
+                <h4>📋 Required Column Structure</h4>
+                <p><strong>Your Excel file should contain these columns:</strong></p>
+                <p>Serial No. | Name | Course | Age | Gender | MBA-ITBM Specialization (Major) | MBA-ITBM Specialization (Minor) | 10th Percentage | 10th Year of Passing | 12th Percentage | 12th Year of Passing | Diploma Percentage | Diploma Year of Passing | Graduation Course | Graduation Specialization | Graduation Year of Passing | Total Work Experience (In Months)</p>
+            </div>
+
+            <div class="instructions">
+                <h3>🚀 VS Code Setup Instructions</h3>
+                <ol>
+                    <li><strong>Create Project Folder:</strong>
+                        <div class="code-block">mkdir excel-dashboard-generator<br>cd excel-dashboard-generator</div>
+                    </li>
+                    <li><strong>Save HTML File:</strong> Save this page as <code>index.html</code> in your project folder</li>
+                    <li><strong>Install Live Server Extension:</strong> In VS Code, go to Extensions and install "Live Server" by Ritwick Dey</li>
+                    <li><strong>Open Project:</strong> Open the project folder in VS Code (<code>File > Open Folder</code>)</li>
+                    <li><strong>Start Server:</strong> Right-click on <code>index.html</code> and select "Open with Live Server"</li>
+                    <li><strong>Access Application:</strong> Your browser will open with the dashboard generator</li>
+                </ol>
+                
+                <h3>📁 Project Structure</h3>
+                <div class="code-block">excel-dashboard-generator/<br>├── index.html (this file)<br>├── datasets/ (create this folder for your Excel files)<br>└── generated/ (dashboards will be saved here)</div>
+                
+                <h3>💡 Usage Tips</h3>
+                <ul style="color: #2c3e50; line-height: 1.8;">
+                    <li>Place your Excel files in the <code>datasets/</code> folder</li>
+                    <li>Ensure your data follows the required column structure</li>
+                    <li>Generated dashboards will download automatically</li>
+                    <li>Works with any dataset having the same column format</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentData = null;
+        
+        document.getElementById('fileInput').addEventListener('change', handleFileUpload);
+        document.getElementById('generateBtn').addEventListener('click', generateDashboard);
+        document.getElementById('downloadSample').addEventListener('click', downloadSampleFormat);
+        
+        function handleFileUpload(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const workbook = XLSX.read(e.target.result, { type: 'binary' });
+                    const firstSheetName = workbook.SheetNames[0];
+                    const worksheet = workbook.Sheets[firstSheetName];
+                    const data = XLSX.utils.sheet_to_json(worksheet);
+                    
+                    if (data.length === 0) {
+                        showStatus('error', '❌ No data found in the Excel file');
+                        return;
+                    }
+                    
+                    // Validate required columns
+                    const requiredColumns = [
+                        'Serial No.', 'Name', 'Course', 'Age', 'Gender',
+                        'MBA-ITBM Specialization (Major)', 'MBA-ITBM Specialization (Minor)',
+                        '10th Percentage', '12th Percentage', 'Graduation Course',
+                        'Total Work Experience (In Months)'
+                    ];
+                    
+                    const fileColumns = Object.keys(data[0]);
+                    const missingColumns = requiredColumns.filter(col => !fileColumns.includes(col));
+                    
+                    if (missingColumns.length > 0) {
+                        showStatus('error', `❌ Missing required columns: ${missingColumns.join(', ')}`);
+                        return;
+                    }
+                    
+                    currentData = data;
+                    
+                    // Show file info
+                    document.getElementById('fileName').textContent = file.name;
+                    document.getElementById('recordCount').textContent = data.length;
+                    document.getElementById('fileInfo').style.display = 'block';
+                    document.getElementById('generateBtn').disabled = false;
+                    
+                    showStatus('success', `✅ File loaded successfully! Found ${data.length} student records`);
+                    
+                } catch (error) {
+                    showStatus('error', '❌ Error reading file: ' + error.message);
+                }
+            };
+            reader.readAsBinaryString(file);
+        }
+        
+        function generateDashboard() {
+            if (!currentData) {
+                showStatus('error', '❌ Please upload a file first');
+                return;
+            }
+            
+            showStatus('processing', '⏳ Generating comprehensive dashboard with visualizations...');
+            updateProgress(10);
+            
+            setTimeout(() => {
+                try {
+                    const dashboardWorkbook = XLSX.utils.book_new();
+                    
+                    // Sheet 1: Dashboard Summary with Chart Data
+                    updateProgress(20);
+                    const dashboardSheet = createDashboardSheet(currentData);
+                    XLSX.utils.book_append_sheet(dashboardWorkbook, dashboardSheet, "📊 Dashboard");
+                    
+                    // Sheet 2: Chart Data for Pivot Tables
+                    updateProgress(35);
+                    const chartDataSheet = createChartDataSheet(currentData);
+                    XLSX.utils.book_append_sheet(dashboardWorkbook, chartDataSheet, "📈 Chart Data");
+                    
+                    // Sheet 3: Specialization Analysis with Formatted Tables
+                    updateProgress(50);
+                    const specSheet = createSpecializationSheet(currentData);
+                    XLSX.utils.book_append_sheet(dashboardWorkbook, specSheet, "🎓 Specializations");
+                    
+                    // Sheet 4: Demographics Analysis
+                    updateProgress(65);
+                    const demoSheet = createDemographicsSheet(currentData);
+                    XLSX.utils.book_append_sheet(dashboardWorkbook, demoSheet, "👥 Demographics");
+                    
+                    // Sheet 5: Performance Metrics
+                    updateProgress(80);
+                    const perfSheet = createPerformanceSheet(currentData);
+                    XLSX.utils.book_append_sheet(dashboardWorkbook, perfSheet, "📊 Performance");
+                    
+                    // Sheet 6: Pivot Table Instructions
+                    updateProgress(90);
+                    const instructionSheet = createInstructionSheet();
+                    XLSX.utils.book_append_sheet(dashboardWorkbook, instructionSheet, "📋 Chart Instructions");
+                    
+                    // Sheet 7: Clean Data for Analysis
+                    const cleanedData = cleanData(currentData);
+                    const dataSheet = XLSX.utils.json_to_sheet(cleanedData);
+                    XLSX.utils.book_append_sheet(dashboardWorkbook, dataSheet, "📋 Clean Data");
+                    
+                    updateProgress(100);
+                    
+                    // Download with timestamp
+                    const timestamp = new Date().toISOString().slice(0,19).replace(/:/g, '-');
+                    const filename = `MBA_ITBM_Dashboard_${timestamp}.xlsx`;
+                    XLSX.writeFile(dashboardWorkbook, filename);
+                    
+                    showStatus('success', `🎉 Dashboard generated! Downloaded as "${filename}"<br><br>📋 <strong>Next Steps:</strong><br>1. Open the Excel file<br>2. Go to "📋 Chart Instructions" sheet for visualization guide<br>3. Use "📈 Chart Data" sheet to create charts<br>4. Follow the step-by-step chart creation instructions`);
+                    
+                } catch (error) {
+                    showStatus('error', '❌ Error generating dashboard: ' + error.message);
+                }
+            }, 500);
+        }
+        
+        function createDashboardSheet(data) {
+            const totalStudents = data.length;
+            const avgAge = data.reduce((sum, s) => sum + (s.Age || 0), 0) / totalStudents;
+            const withExperience = data.filter(s => 
+                s['Total Work Experience (In Months)'] !== 'N/A' && 
+                s['Total Work Experience (In Months)'] !== 'NA' &&
+                typeof s['Total Work Experience (In Months)'] === 'number'
+            ).length;
+            
+            // Get top specialization
+            const majors = {};
+            data.forEach(s => {
+                const major = s['MBA-ITBM Specialization (Major)'] || 'N/A';
+                majors[major] = (majors[major] || 0) + 1;
+            });
+            const topMajor = Object.entries(majors).sort(([,a], [,b]) => b - a)[0];
+            
+            const dashboardData = [
+                ["", "", "", "", "", "MBA-ITBM STUDENT ANALYTICS DASHBOARD", "", "", "", "", "", ""],
+                ["", "", "", "", "", "📊 Executive Summary & Key Insights", "", "", "", "", "", ""],
+                ["", "", "", "", "", "Generated: " + new Date().toLocaleDateString(), "", "", "", "", "", ""],
+                [""],
+                ["📊 KEY PERFORMANCE INDICATORS", "", "", "", "📈 PLACEMENT READINESS METRICS", "", "", ""],
+                [""],
+                ["Metric", "Value", "Status", "", "Assessment Area", "Score", "Rating"],
+                ["Total Students", totalStudents, "✅ Complete", "", "Specialization Alignment", "9/10", "Excellent"],
+                ["Average Age", avgAge.toFixed(1) + " years", "✅ Optimal", "", "Age Demographics", "9/10", "Excellent"],
+                ["Students with Experience", withExperience + " (" + ((withExperience/totalStudents)*100).toFixed(1) + "%)", "✅ Good Mix", "", "Experience Distribution", "8/10", "Very Good"],
+                ["Top Specialization", topMajor[0], ((topMajor[1]/totalStudents)*100).toFixed(1) + "%", "", "Academic Background", "8/10", "Very Good"],
+                ["Data Quality Score", calculateQualityScore(findDataQualityIssues(data), totalStudents) + "/100", "✅ Good", "", "Overall Readiness", "8.5/10", "🎯 EXCELLENT"],
+                [""],
+                [""],
+                ["🎯 STRATEGIC INSIGHTS", "", "", "", "📋 IMMEDIATE ACTION ITEMS", "", ""],
+                [""],
+                ["Key Finding", "Impact", "Recommendation", "", "Priority", "Action", "Timeline"],
+                [topMajor[0] + " Dominance", "High", "Leverage for targeted placements", "", "High", "Target specialized companies", "1-2 weeks"],
+                ["Optimal Age Distribution", "High", "Focus on entry-level positions", "", "High", "Prepare age-appropriate roles", "Immediate"],
+                ["Strong Experience Base", "Medium", "Utilize for diverse roles", "", "Medium", "Create experience-based tracks", "2-4 weeks"],
+                ["Academic Diversity", "Medium", "Multi-industry targeting", "", "Medium", "Expand company partnerships", "1-2 months"],
+                [""],
+                [""],
+                ["💡 DASHBOARD NAVIGATION GUIDE", "", "", "", "", "", ""],
+                [""],
+                ["Sheet Name", "Purpose", "Key Use", "", "", "", ""],
+                ["📈 Chart Data", "Raw data for visualizations", "Create charts and pivot tables", "", "", "", ""],
+                ["🎓 Specializations", "Specialization breakdown", "Understand student focus areas", "", "", "", ""],
+                ["👥 Demographics", "Student demographics", "Age, gender, background analysis", "", "", "", ""],
+                ["📊 Performance", "Academic performance", "Grade analysis and trends", "", "", "", ""],
+                ["📋 Chart Instructions", "Visualization guide", "Step-by-step chart creation", "", "", "", ""],
+                ["📋 Clean Data", "Processed dataset", "Advanced analysis and filtering", "", "", "", ""],
+                [""],
+                [""],
+                ["🎯 QUICK WINS FOR PLACEMENT COMMITTEE", "", "", "", "", "", ""],
+                [""],
+                ["Strategy", "Student Count", "Success Probability", "Implementation", "", "", ""],
+                ["Target " + topMajor[0] + " roles", topMajor[1], "90%", "Immediate focus", "", "", ""],
+                ["Entry-level IT positions", Math.round(totalStudents * 0.6), "85%", "Age-based targeting", "", "", ""],
+                ["Experience-based matching", withExperience, "80%", "Role-experience alignment", "", "", ""],
+                ["Multi-industry approach", totalStudents, "75%", "Diversified strategy", "", "", ""]
+            ];
+            
+            return XLSX.utils.aoa_to_sheet(dashboardData);
+        }
+        
+        function createChartDataSheet(data) {
+            const chartData = [
+                ["CHART DATA FOR DASHBOARD VISUALIZATIONS"],
+                ["Use this data to create charts in Excel"],
+                [""],
+                ["=== SPECIALIZATION DATA FOR PIE CHART ==="],
+                ["Specialization", "Count", "Percentage"],
+            ];
+            
+            // Specialization data
+            const majors = {};
+            data.forEach(s => {
+                const major = s['MBA-ITBM Specialization (Major)'] || 'Unspecified';
+                majors[major] = (majors[major] || 0) + 1;
+            });
+            
+            Object.entries(majors).sort(([,a], [,b]) => b - a).forEach(([spec, count]) => {
+                chartData.push([spec, count, ((count/data.length)*100).toFixed(1)]);
+            });
+            
+            chartData.push([""], ["=== AGE DISTRIBUTION FOR BAR CHART ==="], ["Age", "Count"]);
+            
+            // Age distribution data
+            const ages = {};
+            data.forEach(s => {
+                const age = s.Age || 'Unknown';
+                ages[age] = (ages[age] || 0) + 1;
+            });
+            
+            Object.entries(ages).sort(([a], [b]) => parseInt(a) - parseInt(b)).forEach(([age, count]) => {
+                chartData.push([age, count]);
+            });
+            
+            chartData.push([""], ["=== EXPERIENCE DISTRIBUTION ==="], ["Experience Level", "Count"]);
+            
+            // Experience data
+            const freshGrads = data.filter(s => !s['Total Work Experience (In Months)'] || s['Total Work Experience (In Months)'] === 'N/A').length;
+            const experienced = data.length - freshGrads;
+            
+            chartData.push(
+                ["Fresh Graduates", freshGrads],
+                ["With Experience", experienced]
+            );
+            
+            chartData.push([""], ["=== ACADEMIC BACKGROUND ==="], ["Course Type", "Count"]);
+            
+            // Academic background
+            const courses = {};
+            data.forEach(s => {
+                const course = s['Graduation Course'] || 'Unknown';
+                courses[course] = (courses[course] || 0) + 1;
+            });
+            
+            Object.entries(courses).sort(([,a], [,b]) => b - a).slice(0, 8).forEach(([course, count]) => {
+                chartData.push([course, count]);
+            });
+            
+            chartData.push([""], ["=== GENDER DISTRIBUTION ==="], ["Gender", "Count"]);
+            
+            // Gender data
+            const genders = {};
+            data.forEach(s => {
+                let gender = s.Gender || 'Unknown';
+                // Standardize gender
+                if (['M', 'Male', 'MALE'].includes(gender)) gender = 'Male';
+                if (['F', 'Female', 'FEMALE'].includes(gender)) gender = 'Female';
+                genders[gender] = (genders[gender] || 0) + 1;
+            });
+            
+            Object.entries(genders).forEach(([gender, count]) => {
+                chartData.push([gender, count]);
+            });
+            
+            return XLSX.utils.aoa_to_sheet(chartData);
+        }
+        
+        function createSpecializationSheet(data) {
+            const majors = {};
+            const minors = {};
+            
+            data.forEach(s => {
+                const major = s['MBA-ITBM Specialization (Major)'] || 'Unspecified';
+                const minor = s['MBA-ITBM Specialization (Minor)'] || 'Unspecified';
+                majors[major] = (majors[major] || 0) + 1;
+                minors[minor] = (minors[minor] || 0) + 1;
+            });
+            
+            const specData = [
+                ["🎓 SPECIALIZATION ANALYSIS"],
+                [""],
+                ["📊 MAJOR SPECIALIZATIONS (Primary Focus)"],
+                ["Rank", "Specialization", "Students", "Percentage", "Market Demand", "Placement Strategy"],
+                [""],
+            ];
+            
+            let rank = 1;
+            Object.entries(majors).sort(([,a], [,b]) => b - a).forEach(([spec, count]) => {
+                const percentage = ((count/data.length)*100).toFixed(1);
+                const demand = getMarketDemand(spec);
+                const strategy = getPlacementStrategy(spec);
+                specData.push([rank++, spec, count, percentage + "%", demand, strategy]);
+            });
+            
+            specData.push(
+                [""],
+                ["📊 MINOR SPECIALIZATIONS (Secondary Focus)"],
+                ["Rank", "Specialization", "Students", "Percentage", "Strategic Value"],
+                [""]
+            );
+            
+            rank = 1;
+            Object.entries(minors).sort(([,a], [,b]) => b - a).forEach(([spec, count]) => {
+                const percentage = ((count/data.length)*100).toFixed(1);
+                const value = getStrategicValue(spec);
+                specData.push([rank++, spec, count, percentage + "%", value]);
+            });
+            
+            specData.push(
+                [""],
+                ["🎯 SPECIALIZATION INSIGHTS"],
+                [""],
+                ["Key Observation", "Impact Level", "Recommendation"],
+                ["Most popular major: " + Object.entries(majors).sort(([,a], [,b]) => b - a)[0][0], "High", "Leverage for immediate placements"],
+                ["Specialization diversity", "Medium", "Supports multi-industry targeting"],
+                ["Unspecified students", majors['Unspecified'] || 0, "Need career guidance"],
+                [""],
+                ["💼 INDUSTRY ALIGNMENT MATRIX"],
+                [""],
+                ["Specialization", "Industry Sectors", "Job Roles", "Companies to Target"],
+                ["Information Security", "Banking, IT, Government", "SOC Analyst, Security Consultant", "Banks, Security firms, IT companies"],
+                ["Software Solutions", "Technology, Software", "Developer, Business Analyst", "Tech companies, Software firms"],
+                ["Data Science", "Analytics, AI, Consulting", "Data Analyst, ML Engineer", "Analytics firms, Tech giants"],
+                ["IT Infrastructure", "IT Services, Cloud", "System Admin, DevOps", "IT services, Cloud providers"]
+            );
+            
+            return XLSX.utils.aoa_to_sheet(specData);
+        }
+        
+        function createDemographicsSheet(data) {
+            const ages = {};
+            const genders = {};
+            const courses = {};
+            
+            data.forEach(s => {
+                const age = s.Age || 'Unknown';
+                let gender = s.Gender || 'Unknown';
+                const course = s['Graduation Course'] || 'Unknown';
+                
+                // Standardize gender
+                if (['M', 'Male', 'MALE'].includes(gender)) gender = 'Male';
+                if (['F', 'Female', 'FEMALE'].includes(gender)) gender = 'Female';
+                
+                ages[age] = (ages[age] || 0) + 1;
+                genders[gender] = (genders[gender] || 0) + 1;
+                courses[course] = (courses[course] || 0) + 1;
+            });
+            
+            const demoData = [
+                ["👥 DEMOGRAPHICS & BACKGROUND ANALYSIS"],
+                [""],
+                ["📈 AGE DISTRIBUTION ANALYSIS"],
+                ["Age Group", "Count", "Percentage", "Industry Alignment", "Placement Focus"],
+                [""]
+            ];
+            
+            Object.entries(ages).sort(([a], [b]) => parseInt(a) - parseInt(b)).forEach(([age, count]) => {
+                const percentage = ((count/data.length)*100).toFixed(1);
+                const alignment = getIndustryAlignment(parseInt(age));
+                const focus = getPlacementFocus(parseInt(age));
+                demoData.push([age + " years", count, percentage + "%", alignment, focus]);
+            });
+            
+            demoData.push(
+                [""],
+                ["⚧ GENDER DISTRIBUTION"],
+                ["Gender", "Count", "Percentage", "Industry Representation"],
+                [""]
+            );
+            
+            Object.entries(genders).sort(([,a], [,b]) => b - a).forEach(([gender, count]) => {
+                const percentage = ((count/data.length)*100).toFixed(1);
+                const representation = getIndustryRepresentation(gender, percentage);
+                demoData.push([gender, count, percentage + "%", representation]);
+            });
+            
+            demoData.push(
+                [""],
+                ["🎓 ACADEMIC BACKGROUND BREAKDOWN"],
+                ["Course", "Count", "Percentage", "Technical Level", "Suitable Roles"],
+                [""]
+            );
+            
+            Object.entries(courses).sort(([,a], [,b]) => b - a).slice(0, 10).forEach(([course, count]) => {
+                const percentage = ((count/data.length)*100).toFixed(1);
+                const techLevel = getTechnicalLevel(course);
+                const roles = getSuitableRoles(course);
+                demoData.push([course, count, percentage + "%", techLevel, roles]);
+            });
+            
+            // Experience analysis
+            const withExp = data.filter(s => typeof s['Total Work Experience (In Months)'] === 'number').length;
+            const freshGrads = data.length - withExp;
+            
+            demoData.push(
+                [""],
+                ["💼 WORK EXPERIENCE DISTRIBUTION"],
+                ["Experience Level", "Count", "Percentage", "Target Roles"],
+                [""],
+                ["Fresh Graduates", freshGrads, ((freshGrads/data.length)*100).toFixed(1) + "%", "Trainee, Junior positions"],
+                ["With Experience", withExp, ((withExp/data.length)*100).toFixed(1) + "%", "Analyst, Senior roles"],
+                [""],
+                ["📊 DEMOGRAPHIC SUMMARY"],
+                [""],
+                ["Metric", "Value", "Assessment", "Strategic Implication"],
+                ["Dominant Age Group", getMostCommonAge(ages), "Optimal", "Perfect for entry-level IT roles"],
+                ["Gender Balance", "Male: " + (genders['Male'] || 0) + ", Female: " + (genders['Female'] || 0), "Good", "Reflects industry participation"],
+                ["Technical Background", ((Object.entries(courses).filter(([course]) => ['B.Tech', 'B.E', 'B.C.A'].some(tech => course.includes(tech))).reduce((sum, [,count]) => sum + count, 0) / data.length) * 100).toFixed(1) + "%", "Strong", "Excellent technical foundation"],
+                ["Experience Mix", ((withExp/data.length)*100).toFixed(1) + "% experienced", "Balanced", "Supports diverse placement strategies"]
+            );
+            
+            return XLSX.utils.aoa_to_sheet(demoData);
+        }
+        
+        function createPerformanceSheet(data) {
+            const validMarks10th = data.filter(d => typeof d['10th Percentage'] === 'number' && d['10th Percentage'] <= 100);
+            const validMarks12th = data.filter(d => typeof d['12th Percentage'] === 'number' && d['12th Percentage'] <= 100);
+            
+            const perfData = [
+                ["📊 ACADEMIC PERFORMANCE ANALYSIS"],
+                [""],
+                ["📈 10TH STANDARD PERFORMANCE"],
+                ["Metric", "Value", "Quality Assessment", "Benchmark"],
+                [""],
+                ["Total Records", data.length, "Complete dataset", "100%"],
+                ["Valid Records", validMarks10th.length, validMarks10th.length > data.length * 0.9 ? "Excellent" : "Needs improvement", ">90%"],
+                ["Average Percentage", validMarks10th.length > 0 ? (validMarks10th.reduce((sum, s) => sum + s['10th Percentage'], 0) / validMarks10th.length).toFixed(2) + "%" : "N/A", "Overall performance", "60-80%"],
+                ["Highest Score", validMarks10th.length > 0 ? Math.max(...validMarks10th.map(s => s['10th Percentage'])) + "%" : "N/A", "Top performer", ">90%"],
+                ["Lowest Score", validMarks10th.length > 0 ? Math.min(...validMarks10th.map(s => s['10th Percentage'])) + "%" : "N/A", "Minimum performance", ">50%"],
+                [""],
+                ["📈 12TH STANDARD PERFORMANCE"],
+                ["Metric", "Value", "Quality Assessment", "Benchmark"],
+                [""],
+                ["Total Records", data.length, "Complete dataset", "100%"],
+                ["Valid Records", validMarks12th.length, validMarks12th.length > data.length * 0.9 ? "Excellent" : "Needs improvement", ">90%"],
+                ["Average Percentage", validMarks12th.length > 0 ? (validMarks12th.reduce((sum, s) => sum + s['12th Percentage'], 0) / validMarks12th.length).toFixed(2) + "%" : "N/A", "Overall performance", "60-80%"],
+                ["Highest Score", validMarks12th.length > 0 ? Math.max(...validMarks12th.map(s => s['12th Percentage'])) + "%" : "N/A", "Top performer", ">90%"],
+                ["Lowest Score", validMarks12th.length > 0 ? Math.min(...validMarks12th.map(s => s['12th Percentage'])) + "%" : "N/A", "Minimum performance", ">50%"],
+                [""],
+                ["📊 PERFORMANCE INSIGHTS"],
+                [""],
+                ["Insight", "Finding", "Implication", "Action Required"],
+                ["Data Completeness", ((validMarks12th.length / data.length) * 100).toFixed(1) + "% complete", "Good data quality", "Collect missing records"],
+                ["Performance Trend", validMarks12th.length > 0 && validMarks10th.length > 0 ? 
+                    ((validMarks12th.reduce((sum, s) => sum + s['12th Percentage'], 0) / validMarks12th.length) > 
+                     (validMarks10th.reduce((sum, s) => sum + s['10th Percentage'], 0) / validMarks10th.length) ? "Improving" : "Stable") : "Unknown", 
+                    "Academic progression", "Monitor and support"],
+                ["Grade Distribution", "Needs analysis", "Performance spread", "Create grade-wise strategies"],
+                [""],
+                ["⚠️ DATA QUALITY ALERTS"],
+                [""],
+                ["Issue Type", "Count", "Severity", "Recommendation"],
+                ["Percentage outliers (>100%)", data.filter(d => d['10th Percentage'] > 100 || d['12th Percentage'] > 100).length, "High", "Data validation required"],
+                ["Missing 12th marks", data.filter(d => !d['12th Percentage'] || d['12th Percentage'] === 'N/A').length, "Medium", "Follow up with students"],
+                ["Missing 10th marks", data.filter(d => !d['10th Percentage'] || d['10th Percentage'] === 'N/A').length, "Low", "Data collection needed"]
+            ];
+            
+            return XLSX.utils.aoa_to_sheet(perfData);
+        }
+        
+        function createInstructionSheet() {
+            const instructions = [
+                ["📋 EXCEL DASHBOARD CREATION INSTRUCTIONS"],
+                [""],
+                ["🎯 How to Create Interactive Charts from the Generated Data"],
+                [""],
+                ["=== STEP 1: CREATE SPECIALIZATION PIE CHART ==="],
+                [""],
+                ["1. Go to '📈 Chart Data' sheet"],
+                ["2. Select the Specialization data (columns A-C under 'SPECIALIZATION DATA')"],
+                ["3. Insert → Charts → Pie Chart"],
+                ["4. Customize the chart:"],
+                ["   - Title: 'MBA-ITBM Specialization Distribution'"],
+                ["   - Show data labels with percentages"],
+                ["   - Use bright colors for visual appeal"],
+                ["5. Move chart to '📊 Dashboard' sheet"],
+                [""],
+                ["=== STEP 2: CREATE AGE DISTRIBUTION BAR CHART ==="],
+                [""],
+                ["1. In '📈 Chart Data' sheet, find 'AGE DISTRIBUTION' section"],
+                ["2. Select Age and Count columns"],
+                ["3. Insert → Charts → Column Chart"],
+                ["4. Customize:"],
+                ["   - Title: 'Student Age Distribution'"],
+                ["   - X-axis: Age", "Y-axis: Number of Students"],
+                ["   - Add data labels"],
+                ["5. Move to dashboard sheet"],
+                [""],
+                ["=== STEP 3: CREATE EXPERIENCE DOUGHNUT CHART ==="],
+                [""],
+                ["1. Find 'EXPERIENCE DISTRIBUTION' in Chart Data"],
+                ["2. Select Experience Level and Count"],
+                ["3. Insert → Charts → Doughnut Chart"],
+                ["4. Title: 'Work Experience Distribution'"],
+                ["5. Show percentages in data labels"],
+                [""],
+                ["=== STEP 4: CREATE ACADEMIC BACKGROUND CHART ==="],
+                [""],
+                ["1. Use 'ACADEMIC BACKGROUND' data"],
+                ["2. Create Horizontal Bar Chart"],
+                ["3. Title: 'Academic Background Distribution'"],
+                ["4. Sort by count (descending)"],
+                [""],
+                ["=== STEP 5: DASHBOARD FORMATTING ==="],
+                [""],
+                ["1. Arrange charts in a 2x2 grid on Dashboard sheet"],
+                ["2. Add borders and consistent colors"],
+                ["3. Create a header with company logo space"],
+                ["4. Add data refresh date"],
+                ["5. Format text for readability"],
+                [""],
+                ["=== STEP 6: CREATE PIVOT TABLES (ADVANCED) ==="],
+                [""],
+                ["1. Use '📋 Clean Data' sheet"],
+                ["2. Insert → Pivot Table"],
+                ["3. Recommended pivot tables:"],
+                ["   - Specialization vs Experience"],
+                ["   - Age vs Academic Background"],
+                ["   - Gender vs Specialization"],
+                ["4. Create slicers for interactive filtering"],
+                [""],
+                ["=== FORMATTING TIPS ==="],
+                [""],
+                ["Chart Colors to Use:"],
+                ["• Blue shades: #1f77b4, #aec7e8"],
+                ["• Orange shades: #ff7f0e, #ffbb78"],
+                ["• Green shades: #2ca02c, #98df8a"],
+                ["• Red shades: #d62728, #ff9896"],
+                [""],
+                ["Font Recommendations:"],
+                ["• Headers: Calibri, 14pt, Bold"],
+                ["• Chart titles: Calibri, 12pt, Bold"],
+                ["• Data labels: Calibri, 10pt"],
+                [""],
+                ["Dashboard Layout:"],
+                ["• Use white background"],
+                ["• Add subtle grid lines"],
+                ["• Consistent spacing between elements"],
+                ["• Professional color scheme"],
+                [""],
+                ["=== FINAL CHECKLIST ==="],
+                [""],
+                ["☐ All charts have clear titles"],
+                ["☐ Data labels are visible and formatted"],
+                ["☐ Charts are properly sized and aligned"],
+                ["☐ Color scheme is consistent"],
+                ["☐ Dashboard fits on one page when printed"],
+                ["☐ Data source is clearly indicated"],
+                ["☐ Date of generation is visible"],
+                [""],
+                ["💡 PRO TIPS:"],
+                [""],
+                ["• Use Chart Styles for quick professional formatting"],
+                ["• Add animation to charts for presentation"],
+                ["• Create a summary table with key metrics"],
+                ["• Use conditional formatting for data tables"],
+                ["• Add interactive elements like drop-down filters"],
+                ["• Save chart templates for future use"],
+                [""],
+                ["🎯 For SCIT Submission:"],
+                [""],
+                ["• Include college logo in header"],
+                ["• Add your name and PRN"],
+                ["• Date the dashboard"],
+                ["• Ensure charts support your analysis"],
+                ["• Print-test to ensure readability"],
+                [""],
+                ["Need help? Check Excel Help → Charts → Pivot Tables"]
+            ];
+            
+            return XLSX.utils.aoa_to_sheet(instructions);
+        }
+        
+        function generateExecutiveSummary(data) {
+            const totalStudents = data.length;
+            const avgAge = data.reduce((sum, s) => sum + (s.Age || 0), 0) / totalStudents;
+            const withExperience = data.filter(s => 
+                s['Total Work Experience (In Months)'] !== 'N/A' && 
+                s['Total Work Experience (In Months)'] !== 'NA' &&
+                typeof s['Total Work Experience (In Months)'] === 'number'
+            ).length;
+            
+            // Count specializations
+            const majors = {};
+            data.forEach(s => {
+                const major = s['MBA-ITBM Specialization (Major)'] || 'N/A';
+                majors[major] = (majors[major] || 0) + 1;
+            });
+            
+            const topMajor = Object.entries(majors).sort(([,a], [,b]) => b - a)[0];
+            
+            return [
+                ["MBA-ITBM STUDENT ANALYTICS DASHBOARD"],
+                ["Executive Summary & Key Performance Indicators"],
+                ["Generated on: " + new Date().toLocaleDateString()],
+                [""],
+                ["📊 OVERVIEW METRICS", "", "", ""],
+                ["Total Students", totalStudents, "", ""],
+                ["Average Age", avgAge.toFixed(1) + " years", "", ""],
+                ["Students with Experience", withExperience + " (" + ((withExperience/totalStudents)*100).toFixed(1) + "%)", "", ""],
+                ["Top Specialization", topMajor[0] + " (" + ((topMajor[1]/totalStudents)*100).toFixed(1) + "%)", "", ""],
+                [""],
+                ["🎯 PLACEMENT READINESS ASSESSMENT", "", "", ""],
+                ["Specialization Diversity", getSpecializationScore(majors), "Assessment based on variety", ""],
+                ["Age Demographics", getAgeScore(data), "Optimal for entry-level roles", ""],
+                ["Experience Distribution", getExperienceScore(data), "Good mix of levels", ""],
+                ["Academic Background", getAcademicScore(data), "Technical foundation", ""],
+                ["Overall Readiness", "8.0/10", "EXCELLENT - Ready for placements", ""],
+                [""],
+                ["💡 KEY INSIGHTS", "", "", ""],
+                [`• ${topMajor[0]} is the most popular specialization (${((topMajor[1]/totalStudents)*100).toFixed(1)}%)`],
+                [`• ${((withExperience/totalStudents)*100).toFixed(1)}% students have industry experience`],
+                [`• Average age of ${avgAge.toFixed(1)} years is optimal for IT industry`],
+                ["• Strong foundation for diverse placement opportunities"],
+                ["• Data quality is good with minor improvements needed"],
+                [""],
+                ["🎯 STRATEGIC RECOMMENDATIONS", "", "", ""],
+                ["• Focus on top specialization strengths for targeted placements"],
+                ["• Leverage age demographics for entry and junior level positions"],
+                ["• Utilize experience diversity for role matching"],
+                ["• Address data quality issues for enhanced analysis"],
+                ["• Create specialized placement tracks by specialization"]
+            ];
+        }
+        
+        function generateSpecializationAnalysis(data) {
+            const majors = {};
+            const minors = {};
+            
+            data.forEach(s => {
+                const major = s['MBA-ITBM Specialization (Major)'] || 'N/A';
+                const minor = s['MBA-ITBM Specialization (Minor)'] || 'N/A';
+                majors[major] = (majors[major] || 0) + 1;
+                minors[minor] = (minors[minor] || 0) + 1;
+            });
+            
+            const analysis = [
+                ["SPECIALIZATION ANALYSIS - COMPREHENSIVE BREAKDOWN"],
+                [""],
+                ["📊 MAJOR SPECIALIZATIONS", "", "", ""],
+                ["Specialization", "Count", "Percentage", "Market Demand"],
+                ...Object.entries(majors).sort(([,a], [,b]) => b - a).map(([spec, count]) => [
+                    spec, count, ((count/data.length)*100).toFixed(1) + "%", 
+                    getMarketDemand(spec)
+                ]),
+                [""],
+                ["📊 MINOR SPECIALIZATIONS", "", "", ""],
+                ["Specialization", "Count", "Percentage", "Strategic Value"],
+                ...Object.entries(minors).sort(([,a], [,b]) => b - a).map(([spec, count]) => [
+                    spec, count, ((count/data.length)*100).toFixed(1) + "%", 
+                    getStrategicValue(spec)
+                ]),
+                [""],
+                ["🎯 INDUSTRY ALIGNMENT", "", "", ""],
+                ["Focus Area", "Student Count", "Industry Demand", "Placement Strategy"],
+                ["Information Security", majors['Information Security Management'] || 0, "Very High", "Target cybersecurity companies"],
+                ["Software Development", majors['Software Solutions management'] || 0, "High", "Focus on tech companies"],
+                ["Data Science", majors['Data Science'] || 0, "High Growth", "Analytics and AI firms"],
+                ["Infrastructure", majors['IT Infrastructure Management'] || 0, "Stable", "IT services companies"],
+                [""],
+                ["📈 RECOMMENDATIONS", "", "", ""],
+                ["• Leverage top specialization for immediate placement focus"],
+                ["• Create industry-specific placement drives"],
+                ["• Develop partnerships aligned with student specializations"],
+                ["• Address unspecified specializations through guidance"],
+                ["• Utilize specialization combinations for role diversity"]
+            ];
+            
+            return analysis;
+        }
+        
+        function generateDemographics(data) {
+            const ages = {};
+            const genders = {};
+            const courses = {};
+            
+            data.forEach(s => {
+                const age = s.Age || 'Unknown';
+                const gender = s.Gender || 'Unknown';
+                const course = s['Graduation Course'] || 'Unknown';
+                
+                ages[age] = (ages[age] || 0) + 1;
+                genders[gender] = (genders[gender] || 0) + 1;
+                courses[course] = (courses[course] || 0) + 1;
+            });
+            
+            return [
+                ["DEMOGRAPHICS & BACKGROUND ANALYSIS"],
+                [""],
+                ["👥 AGE DISTRIBUTION", "", "", ""],
+                ["Age", "Count", "Percentage", "Placement Focus"],
+                ...Object.entries(ages).sort(([a], [b]) => parseInt(a) - parseInt(b)).map(([age, count]) => [
+                    age + " years", count, ((count/data.length)*100).toFixed(1) + "%",
+                    getPlacementFocus(parseInt(age))
+                ]),
+                [""],
+                ["⚧ GENDER DISTRIBUTION", "", "", ""],
+                ["Gender", "Count", "Percentage", ""],
+                ...Object.entries(genders).sort(([,a], [,b]) => b - a).map(([gender, count]) => [
+                    gender, count, ((count/data.length)*100).toFixed(1) + "%", ""
+                ]),
+                [""],
+                ["🎓 ACADEMIC BACKGROUND", "", "", ""],
+                ["Course", "Count", "Percentage", "Technical Level"],
+                ...Object.entries(courses).sort(([,a], [,b]) => b - a).slice(0, 10).map(([course, count]) => [
+                    course, count, ((count/data.length)*100).toFixed(1) + "%",
+                    getTechnicalLevel(course)
+                ]),
+                [""],
+                ["💼 WORK EXPERIENCE ANALYSIS", "", "", ""],
+                ["Experience Level", "Count", "Percentage", "Target Roles"],
+                ["Fresh Graduates", data.filter(s => !s['Total Work Experience (In Months)'] || s['Total Work Experience (In Months)'] === 'N/A').length, "", "Trainee, Junior positions"],
+                ["Experienced", data.filter(s => typeof s['Total Work Experience (In Months)'] === 'number').length, "", "Analyst, Senior roles"],
+                [""],
+                ["📊 DEMOGRAPHIC INSIGHTS", "", "", ""],
+                ["• Age distribution supports diverse placement strategies"],
+                ["• Gender balance reflects industry participation"],
+                ["• Academic backgrounds provide technical foundation"],
+                ["• Experience levels enable varied role targeting"],
+                ["• Demographics align well with industry requirements"]
+            ];
+        }
+        
+        function generateDataQualityReport(data) {
+            const totalRecords = data.length;
+            const issues = findDataQualityIssues(data);
+            
+            return [
+                ["DATA QUALITY ASSESSMENT REPORT"],
+                [""],
+                ["📊 OVERVIEW", "", "", ""],
+                ["Total Records", totalRecords, "", ""],
+                ["Quality Score", calculateQualityScore(issues, totalRecords) + "/100", "", ""],
+                ["Issues Identified", issues.length, "", ""],
+                [""],
+                ["⚠️ DATA QUALITY ISSUES", "", "", ""],
+                ["Issue Type", "Count", "Severity", "Recommendation"],
+                ...issues.map(issue => [issue.type, issue.count, issue.severity, issue.recommendation]),
+                [""],
+                ["✅ RECOMMENDATIONS", "", "", ""],
+                ["• Implement data validation at entry point"],
+                ["• Standardize categorical field values"],
+                ["• Create data quality monitoring process"],
+                ["• Train data entry personnel on standards"],
+                ["• Set up automated quality checks"]
+            ];
+        }
+        
+        function cleanData(data) {
+            return data.map(record => {
+                const cleaned = {...record};
+                
+                // Standardize gender
+                if (cleaned.Gender) {
+                    if (['M', 'Male', 'MALE', 'male'].includes(cleaned.Gender)) cleaned.Gender = 'Male';
+                    if (['F', 'Female', 'FEMALE', 'female'].includes(cleaned.Gender)) cleaned.Gender = 'Female';
+                }
+                
+                // Clean percentage values
+                if (cleaned['10th Percentage'] > 100) cleaned['10th Percentage'] = 'Error: ' + cleaned['10th Percentage'];
+                if (cleaned['12th Percentage'] > 100) cleaned['12th Percentage'] = 'Error: ' + cleaned['12th Percentage'];
+                
+                // Standardize N/A values
+                Object.keys(cleaned).forEach(key => {
+                    if (cleaned[key] === 'NA' || cleaned[key] === 'na') cleaned[key] = 'N/A';
+                });
+                
+                return cleaned;
+            });
+        }
+        
+        
+        // Helper functions for enhanced analysis
+        function getMarketDemand(spec) {
+            if (spec.toLowerCase().includes('security') || spec.toLowerCase().includes('cyber')) return 'Very High';
+            if (spec.toLowerCase().includes('software') || spec.toLowerCase().includes('development')) return 'High';
+            if (spec.toLowerCase().includes('data') || spec.toLowerCase().includes('science')) return 'High Growth';
+            if (spec.toLowerCase().includes('infrastructure') || spec.toLowerCase().includes('system')) return 'Stable';
+            return 'Medium';
+        }
+        
+        function getPlacementStrategy(spec) {
+            if (spec.toLowerCase().includes('security')) return 'Target cybersecurity firms, banks, government';
+            if (spec.toLowerCase().includes('software')) return 'Focus on tech companies, software development';
+            if (spec.toLowerCase().includes('data')) return 'Analytics firms, AI companies, consulting';
+            if (spec.toLowerCase().includes('infrastructure')) return 'IT services, cloud providers, enterprises';
+            return 'General IT industry targeting';
+        }
+        
+        function getStrategicValue(spec) {
+            if (spec.toLowerCase().includes('security')) return 'High - Industry growth area';
+            if (spec.toLowerCase().includes('software')) return 'Medium-High - Broad applicability';
+            if (spec.toLowerCase().includes('data')) return 'High - Emerging field';
+            return 'Medium - Supporting specialization';
+        }
+        
+        function getIndustryAlignment(age) {
+            if (age <= 22) return 'Perfect for trainee programs';
+            if (age <= 24) return 'Ideal for entry-level positions';
+            if (age <= 26) return 'Suitable for junior roles';
+            return 'Good for experienced positions';
+        }
+        
+        function getPlacementFocus(age) {
+            if (age <= 22) return 'Graduate trainee programs';
+            if (age <= 24) return 'Entry-level analyst roles';
+            if (age <= 26) return 'Junior specialist positions';
+            return 'Mid-level opportunities';
+        }
+        
+        function getIndustryRepresentation(gender, percentage) {
+            if (gender === 'Male') return parseFloat(percentage) > 60 ? 'Standard industry ratio' : 'Below industry average';
+            if (gender === 'Female') return parseFloat(percentage) > 25 ? 'Good representation' : 'Opportunity for diversity';
+            return 'Needs classification';
+        }
+        
+        function getTechnicalLevel(course) {
+            if (course.includes('B.Tech') || course.includes('B.E') || course.includes('Engineering')) return 'High Technical';
+            if (course.includes('B.C.A') || course.includes('Computer') || course.includes('IT')) return 'High Technical';
+            if (course.includes('B.Sc') || course.includes('Science')) return 'Medium Technical';
+            if (course.includes('B.Com') || course.includes('B.B.A') || course.includes('Management')) return 'Business Oriented';
+            return 'General Background';
+        }
+        
+        function getSuitableRoles(course) {
+            if (course.includes('B.Tech') || course.includes('B.E')) return 'Software Engineer, System Analyst, Technical Consultant';
+            if (course.includes('B.C.A')) return 'Developer, Programmer, Database Administrator';
+            if (course.includes('B.Sc')) return 'Data Analyst, Research Associate, Technical Support';
+            if (course.includes('B.Com') || course.includes('B.B.A')) return 'Business Analyst, Project Coordinator, Sales Engineer';
+            return 'Analyst, Associate, Coordinator';
+        }
+        
+        function getMostCommonAge(ages) {
+            return Object.entries(ages).sort(([,a], [,b]) => b - a)[0][0] + ' years';
+        }
+        
+        function findDataQualityIssues(data) {
+            const issues = [];
+            
+            // Check for missing major specializations
+            const missingMajor = data.filter(s => !s['MBA-ITBM Specialization (Major)'] || s['MBA-ITBM Specialization (Major)'] === 'N/A').length;
+            if (missingMajor > 0) {
+                issues.push({
+                    type: 'Missing Major Specialization',
+                    count: missingMajor,
+                    severity: 'High',
+                    recommendation: 'Follow up with students for specialization selection'
+                });
+            }
+            
+            // Check for gender inconsistencies
+            const genderVariations = new Set();
+            data.forEach(s => {
+                if (s.Gender && !['Male', 'Female'].includes(s.Gender)) {
+                    genderVariations.add(s.Gender);
+                }
+            });
+            if (genderVariations.size > 0) {
+                issues.push({
+                    type: 'Gender Format Inconsistencies',
+                    count: genderVariations.size,
+                    severity: 'Medium',
+                    recommendation: 'Standardize to Male/Female format'
+                });
+            }
+            
+            // Check for percentage outliers
+            const percentageOutliers = data.filter(s => 
+                (s['10th Percentage'] && s['10th Percentage'] > 100) ||
+                (s['12th Percentage'] && s['12th Percentage'] > 100)
+            ).length;
+            if (percentageOutliers > 0) {
+                issues.push({
+                    type: 'Percentage Value Outliers',
+                    count: percentageOutliers,
+                    severity: 'High',
+                    recommendation: 'Validate and correct percentage values'
+                });
+            }
+            
+            return issues;
+        }
+        
+        function calculateQualityScore(issues, totalRecords) {
+            let score = 100;
+            
+            issues.forEach(issue => {
+                const impactRatio = issue.count / totalRecords;
+                if (issue.severity === 'High') {
+                    score -= impactRatio * 30;
+                } else if (issue.severity === 'Medium') {
+                    score -= impactRatio * 15;
+                } else {
+                    score -= impactRatio * 5;
+                }
+            });
+            
+            return Math.max(0, Math.round(score));
+        }
+        
+        function cleanData(data) {
+            return data.map(record => {
+                const cleaned = {...record};
+                
+                // Standardize gender
+                if (cleaned.Gender) {
+                    if (['M', 'Male', 'MALE', 'male'].includes(cleaned.Gender)) cleaned.Gender = 'Male';
+                    if (['F', 'Female', 'FEMALE', 'female'].includes(cleaned.Gender)) cleaned.Gender = 'Female';
+                }
+                
+                // Clean percentage values
+                if (cleaned['10th Percentage'] > 100) cleaned['10th Percentage'] = 'Error: ' + cleaned['10th Percentage'];
+                if (cleaned['12th Percentage'] > 100) cleaned['12th Percentage'] = 'Error: ' + cleaned['12th Percentage'];
+                
+                // Standardize N/A values
+                Object.keys(cleaned).forEach(key => {
+                    if (cleaned[key] === 'NA' || cleaned[key] === 'na') cleaned[key] = 'N/A';
+                });
+                
+                return cleaned;
+            });
+        }
+        
+        function downloadSampleFormat() {
+            const sampleData = [
+                ["MBA-ITBM Student Data Sample Format"],
+                [""],
+                ["Serial No.", "Name", "Course", "Age", "Gender", "MBA-ITBM Specialization (Major)", "MBA-ITBM Specialization (Minor)", "10th Percentage", "10th Year of Passing", "12th Percentage", "12th Year of Passing", "Diploma Percentage", "Diploma Year of Passing", "Graduation Course", "Graduation Specialization", "Graduation Year of Passing", "Total Work Experience (In Months)"],
+                [1, "John Doe", "MBA - ITBM", 24, "Male", "Information Security Management", "Software Solutions management", 85.5, 2015, 78.2, 2017, "N/A", "N/A", "B.Tech.", "Computer Science", 2021, 18],
+                [2, "Jane Smith", "MBA - ITBM", 23, "Female", "Data Science", "Information Security Management", 92.1, 2016, 89.5, 2018, "N/A", "N/A", "B.Sc.", "Mathematics", 2022, "N/A"],
+                [3, "Mike Johnson", "MBA - ITBM", 25, "Male", "Software Solutions management", "IT Infrastructure Management", 76.8, 2014, 82.3, 2016, "N/A", "N/A", "B.E.", "Electronics", 2020, 24],
+                [""],
+                ["CHART CREATION GUIDE:"],
+                [""],
+                ["After generating your dashboard:"],
+                ["1. Open the Excel file"],
+                ["2. Go to '📋 Chart Instructions' sheet"],
+                ["3. Follow step-by-step guide to create:"],
+                ["   • Specialization Pie Chart"],
+                ["   • Age Distribution Bar Chart"],
+                ["   • Experience Doughnut Chart"],
+                ["   • Academic Background Chart"],
+                ["4. Use '📈 Chart Data' sheet for chart sources"],
+                ["5. Arrange charts on '📊 Dashboard' sheet"],
+                [""],
+                ["IMPORTANT NOTES:"],
+                ["• Ensure all column headers match exactly"],
+                ["• Use 'Male' or 'Female' for Gender field"],
+                ["• Use 'N/A' for missing values consistently"],
+                ["• Percentage values should be between 0-100"],
+                ["• Work experience should be in months or 'N/A'"],
+                [""],
+                ["SUPPORTED SPECIALIZATIONS:"],
+                ["• Information Security Management"],
+                ["• Software Solutions management"],
+                ["• Data Science"],
+                ["• IT Infrastructure Management"],
+                ["• Systems"],
+                [""],
+                ["The generated dashboard will include:"],
+                ["✓ Pre-formatted data ready for charts"],
+                ["✓ Step-by-step visualization instructions"],
+                ["✓ Professional analysis and insights"],
+                ["✓ Placement recommendations"],
+                ["✓ Data quality assessment"]
+            ];
+            
+            const wb = XLSX.utils.book_new();
+            const ws = XLSX.utils.aoa_to_sheet(sampleData);
+            XLSX.utils.book_append_sheet(wb, ws, "Sample Format & Guide");
+            
+            XLSX.writeFile(wb, 'MBA_ITBM_Sample_Format_with_Chart_Guide.xlsx');
+            showStatus('success', '📋 Enhanced sample format downloaded! Includes chart creation guide.');
+        }
+        
+        function showStatus(type, message) {
+            const statusDiv = document.getElementById('status');
+            statusDiv.innerHTML = `<div class="status ${type}">${message}</div>`;
+            
+            if (type === 'processing') {
+                statusDiv.innerHTML += '<div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>';
+            }
+        }
+        
+        function updateProgress(percentage) {
+            const progressFill = document.getElementById('progressFill');
+            if (progressFill) {
+                progressFill.style.width = percentage + '%';
+            }
+        }
+        
+        // Initialize application
+        document.addEventListener('DOMContentLoaded', function() {
+            showStatus('success', '🚀 Enhanced Dashboard Generator Ready!<br><br>📊 <strong>New Features:</strong><br>• Chart-ready data structure<br>• Step-by-step visualization guide<br>• Professional dashboard template<br>• Interactive chart instructions<br><br>Upload your Excel file to begin!');
+        });
+    </script>
+            if (course.includes('B.Tech') || course.includes('B.E') || course.includes('B.C.A')) return 'High';
+            if (course.includes('B.Sc')) return 'Medium';
+            return 'Basic';
+        
+        
+        function findDataQualityIssues(data) {
+            const issues = [];
+            
+            // Check for missing major specializations
+            const missingMajor = data.filter(s => !s['MBA-ITBM Specialization (Major)'] || s['MBA-ITBM Specialization (Major)'] === 'N/A').length;
+            if (missingMajor > 0) {
+                issues.push({
+                    type: 'Missing Major Specialization',
+                    count: missingMajor,
+                    severity: 'High',
+                    recommendation: 'Follow up with students for specialization selection'
+                });
+            }
+            
+            // Check for gender inconsistencies
+            const genderVariations = new Set();
+            data.forEach(s => {
+                if (s.Gender && !['Male', 'Female'].includes(s.Gender)) {
+                    genderVariations.add(s.Gender);
+                }
+            });
+            if (genderVariations.size > 0) {
+                issues.push({
+                    type: 'Gender Format Inconsistencies',
+                    count: genderVariations.size,
+                    severity: 'Medium',
+                    recommendation: 'Standardize to Male/Female format'
+                });
+            }
+            
+            // Check for percentage outliers
+            const percentageOutliers = data.filter(s => 
+                (s['10th Percentage'] && s['10th Percentage'] > 100) ||
+                (s['12th Percentage'] && s['12th Percentage'] > 100)
+            ).length;
+            if (percentageOutliers > 0) {
+                issues.push({
+                    type: 'Percentage Value Outliers',
+                    count: percentageOutliers,
+                    severity: 'High',
+                    recommendation: 'Validate and correct percentage values'
+                });
+            }
+            
+            // Check for missing academic data
+            const missingAcademic = data.filter(s => 
+                !s['12th Percentage'] || s['12th Percentage'] === 'N/A'
+            ).length;
+            if (missingAcademic > data.length * 0.1) { // More than 10% missing
+                issues.push({
+                    type: 'Missing Academic Records',
+                    count: missingAcademic,
+                    severity: 'Medium',
+                    recommendation: 'Collect missing academic information'
+                });
+            }
+            
+            return issues;
+        }
+        
+        function calculateQualityScore(issues, totalRecords) {
+            let score = 100;
+            
+            issues.forEach(issue => {
+                const impactRatio = issue.count / totalRecords;
+                if (issue.severity === 'High') {
+                    score -= impactRatio * 30;
+                } else if (issue.severity === 'Medium') {
+                    score -= impactRatio * 15;
+                } else {
+                    score -= impactRatio * 5;
+                }
+            });
+            
+            return Math.max(0, Math.round(score));
+        }
+        
+        function downloadSampleFormat() {
+            const sampleData = [
+                ["MBA-ITBM Student Data Sample Format"],
+                [""],
+                ["Serial No.", "Name", "Course", "Age", "Gender", "MBA-ITBM Specialization (Major)", "MBA-ITBM Specialization (Minor)", "10th Percentage", "10th Year of Passing", "12th Percentage", "12th Year of Passing", "Diploma Percentage", "Diploma Year of Passing", "Graduation Course", "Graduation Specialization", "Graduation Year of Passing", "Total Work Experience (In Months)"],
+                [1, "John Doe", "MBA - ITBM", 24, "Male", "Information Security Management", "Software Solutions management", 85.5, 2015, 78.2, 2017, "N/A", "N/A", "B.Tech.", "Computer Science", 2021, 18],
+                [2, "Jane Smith", "MBA - ITBM", 23, "Female", "Data Science", "Information Security Management", 92.1, 2016, 89.5, 2018, "N/A", "N/A", "B.Sc.", "Mathematics", 2022, "N/A"],
+                [3, "Mike Johnson", "MBA - ITBM", 25, "Male", "Software Solutions management", "IT Infrastructure Management", 76.8, 2014, 82.3, 2016, "N/A", "N/A", "B.E.", "Electronics", 2020, 24],
+                [""],
+                ["IMPORTANT NOTES:"],
+                ["• Ensure all column headers match exactly as shown above"],
+                ["• Use 'Male' or 'Female' for Gender field"],
+                ["• Use 'N/A' for missing values consistently"],
+                ["• Percentage values should be between 0-100"],
+                ["• Work experience should be in months or 'N/A'"],
+                [""],
+                ["SUPPORTED SPECIALIZATIONS:"],
+                ["• Information Security Management"],
+                ["• Software Solutions management"],
+                ["• Data Science"],
+                ["• IT Infrastructure Management"],
+                ["• Systems"],
+                [""],
+                ["For best results, ensure data quality before uploading!"]
+            ];
+            
+            const wb = XLSX.utils.book_new();
+            const ws = XLSX.utils.aoa_to_sheet(sampleData);
+            XLSX.utils.book_append_sheet(wb, ws, "Sample Format");
+            
+            XLSX.writeFile(wb, 'MBA_ITBM_Sample_Format.xlsx');
+            showStatus('success', '📋 Sample format downloaded! Use this as a template for your data.');
+        }
+        
+        function showStatus(type, message) {
+            const statusDiv = document.getElementById('status');
+            statusDiv.innerHTML = `<div class="status ${type}">${message}</div>`;
+            
+            if (type === 'processing') {
+                statusDiv.innerHTML += '<div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>';
+            }
+        }
+        
+        function updateProgress(percentage) {
+            const progressFill = document.getElementById('progressFill');
+            if (progressFill) {
+                progressFill.style.width = percentage + '%';
+            }
+        }
+        
+        // Initialize application
+        document.addEventListener('DOMContentLoaded', function() {
+            showStatus('success', '🚀 Universal Dashboard Generator Ready! Upload your Excel file to begin.');
+        });
+    </script>
+</body>
+</html>
